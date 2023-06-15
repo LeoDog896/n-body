@@ -1,4 +1,7 @@
 import './style.css'
+import randomcolor from 'randomcolor'
+
+const random = (min: number, max: number) => Math.random() * (max - min) + min
 
 const canvas = document.querySelector('canvas')!
 
@@ -13,55 +16,15 @@ type Entity = {
   mass: number;
   position: Vector;
   velocity: Vector;
+  color: string;
 }
 
-const entities: Entity[] = [
-  {
-    mass: 1.989e30,
-    position: [0, 0],
-    velocity: [0, 0]
-  },
-  {
-    mass: 0.33011e24,
-    position: [57.909e9, 0],
-    velocity: [0, 47.36e3]
-  },
-  {
-    mass: 4.8675e24,
-    position: [108.209e9, 0],
-    velocity: [0, 35.02e3]
-  },
-  {
-    mass: 5.9724e24,
-    position: [149.596e9, 0],
-    velocity: [0, 29.78e3]
-  },
-  {
-    mass: 0.64171e24,
-    position: [227.923e9, 0],
-    velocity: [0, 24.07e3]
-  },
-  {
-    mass: 1898.19e24,
-    position: [778.570e9, 0],
-    velocity: [0, 13e3]
-  },
-  {
-    mass: 568.34e24,
-    position: [1433.529e9, 0],
-    velocity: [0, 9.68e3]
-  },
-  {
-    mass: 86.813e24,
-    position: [2872.463e9, 0],
-    velocity: [0, 6.80e3]
-  },
-  {
-    mass: 102.413e24,
-    position: [4495.060e9, 0],
-    velocity: [0, 5.43e3]
-  }
-];
+let entities: Entity[] = Array.from({ length: 100 }, () => ({
+  mass: 1e10,
+  position: [random(-width / 2, width / 2), random(-height / 2, height / 2)],
+  velocity: [0, 0],
+  color: randomcolor()
+}))
 
 function scaleVector(vector: Vector, scale: number): Vector {
   return [vector[0] * scale, vector[1] * scale]
@@ -71,8 +34,17 @@ function addVectors(...vectors: Vector[]): Vector {
   return vectors.reduce((acc, vector) => [acc[0] + vector[0], acc[1] + vector[1]])
 }
 
-let dt = 10000;
-// now i just have to figure out why its NOT moving
+window.addEventListener('click', (event) => {
+  const [x, y] = [event.clientX - width / 2, event.clientY - height / 2]
+  entities.push({
+    mass: 1e10,
+    position: [x, y],
+    velocity: [0, 0],
+    color: randomcolor()
+  })
+})
+
+let dt = 1;
 function render() {
 
   ctx.clearRect(0, 0, width, height)
@@ -82,7 +54,8 @@ function render() {
   // draw
   for (const entity of entities) {
     ctx.beginPath()
-    const [x, y] = scaleVector(entity.position, 1e-9)
+    ctx.fillStyle = entity.color;
+    const [x, y] = entity.position
     ctx.arc(x + width / 2, y + height / 2, 10, 0, 2 * Math.PI)
     ctx.fill()
   }
@@ -92,11 +65,22 @@ function render() {
     let a_g: Vector = [0, 0]
     for (const other of entities) {
       if (other !== entity) {
-        const r_vector = addVectors(entity.position, scaleVector(other.position, -1))
-        const r_mag = Math.sqrt(r_vector[0] ** 2 + r_vector[1] ** 2)
-        const acceleration = -1.0 * 6.674e-11 * other.mass / r_mag ** 2
-        const r_unit_vector = scaleVector(r_vector, 1 / r_mag)
-        a_g = addVectors(a_g, scaleVector(r_unit_vector, acceleration))
+        const softening_length = 0.01;
+
+        const r_vector = addVectors(entity.position, scaleVector(other.position, -1));
+        const r_mag = Math.sqrt(r_vector[0] ** 2 + r_vector[1] ** 2);
+
+        let acceleration;
+        if (r_mag > softening_length) {
+          acceleration = -1.0 * 6.674e-11 * other.mass / (r_mag ** 2);
+        } else {
+          const softening_factor = (softening_length ** 2) / (r_mag * (r_mag + softening_length));
+          acceleration = -1.0 * 6.674e-11 * other.mass * softening_factor;
+        }
+
+        const r_unit_vector = scaleVector(r_vector, 1 / r_mag);
+        a_g = addVectors(a_g, scaleVector(r_unit_vector, acceleration));
+
       }
     }
     entity.velocity = addVectors(entity.velocity, scaleVector(a_g, dt))
