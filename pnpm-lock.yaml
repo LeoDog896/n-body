@@ -1,6 +1,9 @@
 lockfileVersion: '6.0'
 
 devDependencies:
+  '@types/randomcolor':
+    specifier: ^0.5.7
+    version: 0.5.7
   randomcolor:
     specifier: ^0.6.2
     version: 0.6.2
@@ -210,6 +213,10 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@types/randomcolor@0.5.7:
+    resolution: {integrity: sha512-LPcG96dGYRCsXlk1fslUNIg6ebEi+bKNyn84uBL/pu2cRSf5i/djD3ArJZOyzszVMVV/DB87va6pMZP+tRSl/w==}
+    dev: true
 
   /esbuild@0.17.19:
     resolution: {integrity: sha512-XQ0jAPFkK/u3LcVRcvVHQcTIqD6E2H1fvZMA5dQPSOWb3suUbWbfbRf94pjc0bNzRYLfIrDRQXr7X+LHIm5oHw==}
